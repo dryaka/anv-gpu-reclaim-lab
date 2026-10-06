@@ -7,7 +7,7 @@ RUN apt-get update && apt-get install -y --no-install-recommends \
     build-essential git dpkg-dev ca-certificates python3 python3-venv python3-pip \
     python3-mako python3-yaml python3-packaging pkg-config ninja-build flex bison \
     libdrm-dev=${LIBDRM_VERSION} libexpat1-dev libelf-dev libzstd-dev zlib1g-dev \
-    libx11-dev libx11-xcb-dev libxcb-dri3-dev libxcb-present-dev libxcb-randr0-dev \
+    libx11-dev libx11-xcb-dev libxrandr-dev libxcb-dri3-dev libxcb-present-dev libxcb-randr0-dev \
     libxcb-shm0-dev libxcb-sync-dev libxcb-xfixes0-dev libxshmfence-dev \
     libwayland-dev wayland-protocols glslang-tools spirv-tools \
     llvm-20-dev clang-20 libclang-20-dev libclang-cpp20-dev libclc-20-dev \

@@ -20,5 +20,7 @@ jobs:
           python3 -m py_compile scripts/*.py
           python3 -m json.tool versions/environment.json > /dev/null
           python3 -m json.tool versions/mesa-source.json > /dev/null
+          python3 -m json.tool versions/fedora-kernel-source.json > /dev/null
+          bash -n scripts/build-image.sh
       - name: Whitespace check
         run: git diff --check HEAD^ HEAD

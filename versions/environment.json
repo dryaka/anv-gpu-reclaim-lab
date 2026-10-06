@@ -1,7 +1,7 @@
 {
   "schema_version": 1,
   "recorded_date": "2026-10-06",
-  "status": "runtime devices and saved parameters checked; loaded-runner library pending",
+  "status": "loaded baseline verified; experimental patch and build recipe prepared; full driver build pending",
   "host": {
     "kernel_release": "7.2.8-200.fc44.x86_64",
     "kernel_source_rpm": "kernel-7.2.8-200.fc44.src.rpm",
@@ -24,8 +24,8 @@
     "ollama_version": "0.34.4",
     "vk_driver_files_reported": null,
     "vk_icd_filenames_reported": null,
-    "loaded_anv_library": null,
-    "loaded_anv_sha256": null,
+    "loaded_anv_library": "/usr/lib/x86_64-linux-gnu/libvulkan_intel.so",
+    "loaded_anv_sha256": "9ecefd82942c76e227075e01a6dc78318cbb210e7fd86d2bde145501539422e4",
     "memory_limits": {
       "container_memory_max": "max",
       "container_memory_high": "max",
@@ -95,10 +95,18 @@
       "parameter_count_reported": "460.73M",
       "embedding_length": 1152,
       "dimensions": 5120
-    }
+    },
+    "expected_full_offload_layers": 66,
+    "model_manifest_digest": "c44571a7ec4632c3d7494a7317a9c70949ce475d2acce2586046d585f244839f"
   },
   "experimental_image": null,
-  "patch": null,
+  "patch": {
+    "path": "patches/0001-anv-experimental-gpu-reclaim.patch",
+    "sha256": "d59b3f8d7608fec6a34cb3eca715b5c391e5c13c7bdc9e1321df8f90f114e157",
+    "default_enabled": false,
+    "scope": "Linux Xe integrated GPU; ANV only",
+    "full_driver_compile": "pending operator build"
+  },
   "inventory_snapshot": {
     "model_loaded": false,
     "host_mem_available_kib": 40779092,
@@ -106,5 +114,27 @@
     "host_gpu_reclaim_kib": 885140,
     "swap_used_kib": 0,
     "comparison_condition": "large reuse-pool scenario not established by this snapshot"
+  },
+  "loaded_baseline": {
+    "started_utc": "2026-10-06T19:21:43.662867+00:00",
+    "context_length": 32768,
+    "offloaded_layers": 66,
+    "total_offload_layers": 66,
+    "request_completed": true,
+    "prompt_eval_count": 65,
+    "eval_count": 45,
+    "load_duration_ns": 18749443317,
+    "eval_duration_ns": 93843458000,
+    "eval_tokens_per_second": 0.47952261,
+    "effective_threads": 2,
+    "effective_batch": 512,
+    "effective_microbatch": 512,
+    "flash_attention_argument": "auto",
+    "swap_in_pages_delta": 0,
+    "swap_out_pages_delta": 0,
+    "container_oom": 0,
+    "container_oom_kill": 0,
+    "llama_cpp_build_short": "161755f29",
+    "interpretation": "initial full-offload identity baseline; does not reproduce or resolve reclaim-pool reload issue"
   }
 }

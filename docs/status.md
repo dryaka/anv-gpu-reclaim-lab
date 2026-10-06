@@ -1,46 +1,34 @@
 # Experiment status and next handoff
 
-Updated: 6 October 2026, after the device and saved-parameter checks.
+Updated: 6 October 2026, after loaded-baseline verification and patch preparation.
 
 | Plan step | State |
 | --- | --- |
-| 1 — environment inventory | Received and assessed. Memory tests used defaults; the separate 12-thread CPU choice is excluded. |
-| 2 — loaded driver, matched source and kernel/limits check | Exact Mesa and Fedora sources, image/config digest binding, resource limits, visible GPU device nodes and absence of saved parameter overrides confirmed. Actual loaded-runner ANV library remains to be verified. |
-| 3 — opt-in ANV implementation | Pending loaded-runner binding; no experimental patch exists yet. |
-| 4 — build and comparison bundle | Pending step 3. Inventory, source-fetch and loaded-baseline identity-check tools are ready. |
-| 5–13 — build, hardware tests, analysis and decision | Not started. |
+| 1 — environment inventory | Complete for this preparation. Defaults recorded; separate 12-thread CPU setting excluded. |
+| 2 — loaded driver, matched source and kernel/limits | Complete. Actual ANV hash matches the package/source; exact Fedora accounting and image config digest checked. Baseline uses context 32,768 with 66/66 offload. |
+| 3 — opt-in ANV implementation | Patch written and locally reviewed; parser/arithmetic tests and exact-source patch application pass. Full driver compilation is the next validation. |
+| 4 — build and evidence bundle | Containerfile, build collector, runtime design and rollback instructions ready. Exact smoke/cycle execution tooling will be finalized after build review, before hardware comparisons. |
+| 5 — local image build | Next action — Aleš. |
+| 6–13 — build review, smoke, comparisons, analysis and decision | Pending the build. |
 
-## Aleš: loaded baseline identity check
+## Aleš: build and return evidence
 
-Run from the repository, with no model currently loaded and no other inference requests during collection:
+Stop the baseline model manually if it is still loaded, then build from the clean updated branch:
 
 ```bash
+ollama stop hf.co/bottlecapai/ThinkingCap-Qwen3.8-27B-GGUF:Q6_K
 git fetch origin
 git switch experiment/anv-gpu-reclaim
 git pull --ff-only
-python3 scripts/check-loaded-baseline.py
+bash scripts/build-image.sh
 ```
 
-This is now an intentional model load, using the installed Q6_K test model. It requests a 32,768 context and at most 128 output tokens, leaves thread/batch/GPU selection and other inference options at their defaults, and keeps the runner loaded for up to 30 minutes so its library maps can be captured. No model is pulled, no memory is manually reclaimed, and no existing loaded model is stopped by the script. It refuses to proceed if another model is loaded, the model is absent or the Ollama version has changed.
+This compiles the experimental image and collects source, patch, package, image and dependency evidence. It does not start the experimental service or replace the normal container. It uses four build jobs by default and includes LLVM 20 development dependencies. Let the host settle after compilation before memory measurements.
 
-The 262,144 context reported by `ollama show` is the model's maximum, not evidence of the actual runtime allocation. Both container and host CLI `show --parameters` returned no saved overrides. The baseline's explicit 32,768 request is recorded separately from the earlier default-based tests.
+Attach the printed build `.tar.gz` bundle here. If the build fails, attach its `build.log`. See [build/runtime handoff](build-and-runtime.md) for details. The assistant will review compiler/dependency evidence before the switch-off driver smoke check.
 
-The script samples host memory/vmstat about once per second during the request, collects inventory/process maps while the runner remains loaded, and records both stdout and stderr from container logs since the check began. It saves the request, response and API model status as well. A completed generation does not by itself establish correct offload or library identity; the assistant will inspect the evidence.
+The complete ANV driver has not been compiled in the assistant's environment, which lacks a container engine. The build recipe deliberately fails on unavailable pinned compatibility packages instead of silently changing the stack; return that error for diagnosis if encountered.
 
-It prints an evidence directory and a `.tar.gz` bundle outside Git. Review and attach the bundle here; do not commit it to this public repository. The check is preparation evidence, not case A or a substitute for the three-reload matrix.
+## Acceptance remains unchanged
 
-After the script has finished collecting, stop the model manually:
-
-```bash
-OLLAMA_HOST=http://127.0.0.1:11434 ollama stop hf.co/bottlecapai/ThinkingCap-Qwen3.8-27B-GGUF:Q6_K
-```
-
-If the desktop becomes persistently unresponsive or a GPU/OOM error occurs, interrupt the script and stop the model manually; interrupting the API client does not guarantee unload. Preserve the evidence for diagnosis. Do not force more GPU layers or remove reserves to make the check complete.
-
-## Assistant: next work
-
-1. Check effective context, placement and loaded ANV hash against the confirmed package/source.
-2. Implement and test the default-off ANV patch, preserving raw Xe/heap bounds, reserves and rounding.
-3. Provide the multi-stage Containerfile, driver verification, identical A–C request/cycle tools and rollback commands. Recover or verify the actual device mapping when specifying the test-container launch; observing device nodes did not recover the original creation command.
-
-A–C remain one initial load plus three manual stop/reload cycles each. The separate 12-thread CPU setting is not imported. Case D is a bounded anonymous-memory holder with low CPU activity, sized after A–C results. No timeout-driven scenario is required.
+A–C each use one initial load plus three manual stop/reload cycles under a populated reuse pool. B/C use the same custom image with the switch off/on; CPU thread selection remains at its default and context is fixed at 32,768. D is a bounded memory holder with low CPU activity, sized after A–C. The initial baseline verifies source binding and full loading with ample headroom; it is not evidence that the reload problem is fixed.

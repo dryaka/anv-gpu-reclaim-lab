@@ -8,7 +8,7 @@ The operator reports `mesa-vulkan-drivers:amd64 25.2.8-0ubuntu0.24.04.2` in the 
 
 The corresponding upstream archive and Ubuntu packaging archive were downloaded from Ubuntu's archive. Their SHA-256 hashes match the descriptor. `dpkg-source --no-check -x` extracted the source and applied all seven distribution patches successfully. GPG signature authentication was not performed. The descriptor, archive and inspected-file hashes are retained in `versions/mesa-source.json`.
 
-The source version is resolved. The uploaded inventory subsequently confirmed the packaged library hash, an empty `dpkg -V` result and its runtime dependencies. The runner has not yet been bound to that package because no model was loaded. Unset `VK_DRIVER_FILES` and `VK_ICD_FILENAMES` do not establish which library the runner loaded; process maps are still needed.
+The source version is resolved. Inventory confirmed the packaged library hash, an empty `dpkg -V` result and its runtime dependencies. The loaded-baseline bundle then confirmed that the runner mapped that same ANV library and selected Intel PTL for full GPU offload. Process maps plus device/offload logs complete runtime source binding; unset selection variables alone would not have established it.
 
 The agreed GitLab source workflow needs one refinement: use the exact Ubuntu source package with its distribution patches for the first build. A bare upstream tag would omit patches present in the installed package. Upstream GitLab remains the source of record; its commit pin can be added separately, but the build input is pinned by the Ubuntu archive hashes. No moving tag or current `latest` image should become a build input.
 
@@ -27,7 +27,7 @@ Line numbers below refer to the extracted source with Ubuntu patches applied; fi
 
 Ubuntu's ANV patch changes mmap alignment and introduces a page-size field. It does not replace the memory-availability clamp or budget calculation. The other patches affect GLX, build/tests and compiler/util code; all must still be retained in the matched build.
 
-**Implementation implication:** adding `GPUReclaim` to `device->sys.available` after the shared Intel adjustment would have lost the original region-free bound. The ANV opt-in path must retain or freshly query that raw bound and use a single sampled `MemAvailable + GPUReclaim` input before independent caps. It must preserve initialization as well as later refresh behavior and fall back on query/parser failure. Shared utility behavior for other drivers remains unchanged. Kernel source confirmation is now complete for the identified package; actual loaded-driver binding remains pending.
+**Implementation implication:** adding `GPUReclaim` to `device->sys.available` after the shared Intel adjustment would have lost the original region-free bound. The implemented opt-in path freshly queries that raw bound on a copied device-info object and applies the sampled `MemAvailable + GPUReclaim` input before independent caps. Initialization and refresh both use it, with conservative fallback. Shared utility behavior remains unchanged. Kernel and loaded-driver source binding are complete; full compilation and hardware comparison remain pending.
 
 ## Kernel accounting check
 

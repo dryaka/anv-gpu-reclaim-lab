@@ -1,0 +1,11 @@
+.git
+__pycache__
+**/__pycache__
+evidence
+sources
+downloads
+build
+results/raw
+*.log
+*.tar*
+*.gguf

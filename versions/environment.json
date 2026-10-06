@@ -1,29 +1,63 @@
 {
   "schema_version": 1,
   "recorded_date": "2026-10-06",
-  "status": "source-inspected; runtime binding and Fedora kernel delta pending",
+  "status": "inventory assessed; exact Fedora accounting checked; loaded driver and device exposure pending",
   "host": {
     "kernel_release": "7.2.8-200.fc44.x86_64",
-    "kernel_source_rpm": null,
-    "drm_driver": null,
+    "kernel_source_rpm": "kernel-7.2.8-200.fc44.src.rpm",
+    "drm_driver": "xe",
     "gpu_expected": "Intel Panther Lake integrated GPU",
-    "ram_nominal_gb": 48
+    "ram_nominal_gb": 48,
+    "pci_vendor": "0x8086",
+    "pci_device": "0xb0a0",
+    "pci_revision": "0x00",
+    "podman_version": "5.8.7"
   },
   "baseline": {
     "container": "ollama",
     "image_name": "docker.io/ollama/ollama:latest",
     "local_image_id": "sha256:7fe01b0ef22e342fcbcb61e89d39de511609f078c30754a3a0bee7bb0f20a5c2",
-    "immutable_registry_reference": null,
+    "immutable_registry_reference": "docker.io/ollama/ollama@sha256:4be1eaabf0dd0152bfbb780347e2888b5fe86ec25d0faa3eb4b1a956173736fb",
     "runtime_os": "Ubuntu 24.04.5 LTS (Noble Numbat)",
     "mesa_vulkan_drivers": "25.2.8-0ubuntu0.24.04.2",
     "vulkan_loader": "1.3.275.0-1build1",
-    "ollama_version": null,
+    "ollama_version": "0.34.4",
     "vk_driver_files_reported": null,
     "vk_icd_filenames_reported": null,
     "loaded_anv_library": null,
     "loaded_anv_sha256": null,
-    "memory_limits": null,
-    "launch_settings": null
+    "memory_limits": {
+      "container_memory_max": "max",
+      "container_memory_high": "max",
+      "readable_ancestor_memory_max": "max",
+      "readable_ancestor_memory_high": "max",
+      "container_swap_max": "max",
+      "oom": 0,
+      "oom_kill": 0
+    },
+    "launch_settings": {
+      "OLLAMA_IGPU_ENABLE": "1",
+      "ANV_SYS_MEM_LIMIT": "90",
+      "explicit_context_environment": null,
+      "gpu_device_mapping": "not established; inspect Devices is empty",
+      "privileged": false,
+      "security_options": [],
+      "model_mount_destination": "/root/.ollama/models"
+    },
+    "packaged_anv_library": "/usr/lib/x86_64-linux-gnu/libvulkan_intel.so",
+    "packaged_anv_sha256": "9ecefd82942c76e227075e01a6dc78318cbb210e7fd86d2bde145501539422e4",
+    "mesa_package_verification": "dpkg -V reported no differences",
+    "image_reference_note": "Registry OCI index resolves to the recorded linux/amd64 manifest, whose config digest matches the uploaded local image ID.",
+    "reported_repo_digests": [
+      "docker.io/ollama/ollama@sha256:4be1eaabf0dd0152bfbb780347e2888b5fe86ec25d0faa3eb4b1a956173736fb",
+      "docker.io/ollama/ollama@sha256:8262851b2846b87c649eddf3e76beb270c52f4d1bc94559f47efde16b0841551"
+    ],
+    "registry_verification": {
+      "index_digest": "sha256:8262851b2846b87c649eddf3e76beb270c52f4d1bc94559f47efde16b0841551",
+      "amd64_manifest_digest": "sha256:4be1eaabf0dd0152bfbb780347e2888b5fe86ec25d0faa3eb4b1a956173736fb",
+      "config_digest": "sha256:7fe01b0ef22e342fcbcb61e89d39de511609f078c30754a3a0bee7bb0f20a5c2",
+      "matches_uploaded_image_id": true
+    }
   },
   "intended_workload": {
     "model": "hf.co/bottlecapai/ThinkingCap-Qwen3.8-27B-GGUF:Q6_K",
@@ -35,8 +69,20 @@
     "fixed_prompt": null,
     "output_limit": null,
     "keep_alive": null,
-    "case_d_memory_mib": null
+    "case_d_memory_mib": null,
+    "operator_memory_test_options": "defaults; no explicit request options reported",
+    "cpu_test_threads_separate": 12,
+    "cpu_test_threads_apply_to_this_comparison": false,
+    "model_saved_parameters": null
   },
   "experimental_image": null,
-  "patch": null
+  "patch": null,
+  "inventory_snapshot": {
+    "model_loaded": false,
+    "host_mem_available_kib": 40779092,
+    "host_gpu_active_kib": 1265580,
+    "host_gpu_reclaim_kib": 885140,
+    "swap_used_kib": 0,
+    "comparison_condition": "large reuse-pool scenario not established by this snapshot"
+  }
 }

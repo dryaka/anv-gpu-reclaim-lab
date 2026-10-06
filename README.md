@@ -2,7 +2,7 @@
 
 Test whether an opt-in Intel ANV availability estimate using `MemAvailable + GPUReclaim` prevents Ollama from choosing partial GPU offload when a model reloads with a populated TTM reuse pool.
 
-**Status:** repository initialized; matching Ubuntu source inspected; remaining runtime inventory needed. No experimental driver has been built or hardware-tested. See [current status and next handoff](docs/status.md).
+**Status:** inventory assessed; matching Ubuntu Mesa and exact Fedora kernel sources checked. Device exposure and loaded-runner library still need verification. No experimental driver has been built or hardware-tested. See [current status and next handoff](docs/status.md).
 
 ## Start here
 
@@ -17,6 +17,7 @@ The collector is read-only and writes evidence outside Git. Return its output pr
 
 - [Agreed project plan](docs/anv-gpu-reclaim-test-project-plan.md): responsibilities, manual reload matrix, acceptance and rollback.
 - [Environment manifest](versions/environment.json): supplied observations separated from unknown and intended values.
+- [Inventory assessment](docs/inventory-assessment.md) and [Fedora source evidence](versions/fedora-kernel-source.json): assessed runtime limits and exact kernel accounting check.
 - [Pinned Mesa source](versions/mesa-source.json) and [source assessment](docs/source-assessment.md): Ubuntu distribution patches, checked hashes and identified accounting path.
 - `scripts/fetch-mesa-source.py`: reproduce source extraction in an environment containing `dpkg-source`, into a new directory outside Git. Retains Ubuntu patches; applies no experimental change.
 - `tests/`: inventory privacy/behavior and manifest checks. Run `python3 -m unittest discover -s tests -v`.

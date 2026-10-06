@@ -1,0 +1,26 @@
+{
+  "kernel_release": "7.2.8-200.fc44.x86_64",
+  "source_rpm": "kernel-7.2.8-200.fc44.src.rpm",
+  "url": "https://kojipkgs.fedoraproject.org/packages/kernel/7.2.8/200.fc44/src/kernel-7.2.8-200.fc44.src.rpm",
+  "source_rpm_sha256": "652306d9c09739b56002f52505f266df663d88c6e0b816e76de600cfdfc73bf5",
+  "signature_verification": "not performed; downloaded over HTTPS, SHA-256 recorded",
+  "payload_sha256": {
+    "linux-7.2.8.tar.xz": "65a07d5d0d88dac963b190f087ccd1498622cb742ccfa1b4e46f8110f08832a0",
+    "patch-7.2-redhat.patch": "0512fc2346595b1a5a4f4c6ed698297a881fea6919c9bb90f98170503cb11523",
+    "linux-kernel-test.patch": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855",
+    "kernel.spec": "c8ff94523b1d1026c81d6c866918dfbed69c960e0497072b4ef70c20ed7cdb14"
+  },
+  "inspected_files_sha256": {
+    "mm/show_mem.c": "dba76b263bbdf93323a277a29c9281a892ff3fb35ddd6f0ddaf9ba1acb5b02f5",
+    "fs/proc/meminfo.c": "d6c5807421a69eac21efd737b39d099c711b3132b371dc34986d181746e3deda",
+    "drivers/gpu/drm/ttm/ttm_pool.c": "9c06453e17cbeee539738bfd901f41464e9de9a5599d5b7882402cd7fea0172c"
+  },
+  "assessment": {
+    "spec_patch_inputs": ["patch-7.2-redhat.patch", "linux-kernel-test.patch"],
+    "test_patch_empty": true,
+    "redhat_patch_modifies_inspected_files": false,
+    "redhat_patch_modifies_gpu_or_misc_reclaim_counters": false,
+    "mem_available_includes_gpu_reclaim": false,
+    "scope": "Inspected source accounting paths; hardware reuse and actual runner binding still require verification"
+  }
+}

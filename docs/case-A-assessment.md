@@ -25,9 +25,9 @@ Partial placement itself changes subsequent allocation/unload conditions. B need
 
 The collector retained 543 memory samples. Global `pswpout` increased by 57,743 pages and `pswpin` by 1,910 pages: approximately 225.6 MiB out and 7.46 MiB in with the host's 4 KiB pages. Nonzero deltas occurred in 17 and 21 sample intervals respectively; the main swap-out bursts occurred during the initial load and reload 2. This is recorded swap activity, not a swap-free baseline. Global counters alone cannot attribute every page to the test. Final host swap occupancy was about 232.4 MiB; the container's final memory.swap.current was about 1.53 MiB.
 
-Minimum sampled MemAvailable was about 9.45 GiB. Sampled cgroup OOM/oom_kill counters remained zero, and all readable leaf/ancestor memory.max, memory.high and memory.swap.max limits were `max`. The successfully collected kernel journal contains one perf sampling-rate adjustment; it reports no GPU reset or OOM event in this interval. This does not establish desktop responsiveness, which needs Aleš's observation.
+Minimum sampled MemAvailable was about 9.45 GiB. Sampled cgroup OOM/oom_kill counters remained zero, and all readable leaf/ancestor memory.max, memory.high and memory.swap.max limits were `max`. The successfully collected kernel journal contains one perf sampling-rate adjustment; it reports no GPU reset or OOM event in this interval. Aleš subsequently confirmed that the desktop remained responsive as usual throughout Case A.
 
-No host acceptance conclusion is made without that operator note. Keep any pre-existing swap occupancy separate from new activity in B/C; compare counter deltas instead of resetting swap or dropping caches between cases.
+The operator observation completes the responsiveness record for A. Keep any pre-existing swap occupancy separate from new activity in B/C; compare counter deltas instead of resetting swap or dropping caches between cases.
 
 ## Next handoff
 

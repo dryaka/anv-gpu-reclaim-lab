@@ -8,7 +8,7 @@ Owner and test operator: Aleš Dryák
 
 Implementation and analysis: ChatGPT assistant
 
-Status: Test approach agreed; environment inventory is the next action
+Status: Hardware sequence A–E and final report complete; publication approved; PR review and owner decision pending.
 
 ## Objective
 
@@ -150,25 +150,7 @@ The shared host TTM pool can remain populated after stopping the test. If the or
 
 The assistant will deliver the version manifest, patch, Containerfile, build/run/rollback instructions, collection and test scripts, and final result report. Aleš will supply the environment inventory, local build output and hardware test evidence.
 
-**Next action — Aleš:** run the inventory commands below and provide the output together with the current container launch command or configuration, omitting credentials. These commands collect information; they do not change the running service.
-
-```bash
-uname -r
-readlink -f /sys/class/drm/renderD128/device/driver
-podman inspect --format '{{.ImageName}} {{.Image}}' ollama
-
-podman exec ollama sh -c '
-cat /etc/os-release
-if command -v dpkg-query >/dev/null; then
-    dpkg-query -W "mesa*" "libvulkan*"
-elif command -v rpm >/dev/null; then
-    rpm -qa | sort | grep -E "mesa|vulkan"
-fi
-printenv VK_DRIVER_FILES VK_ICD_FILENAMES
-'
-```
-
-Unset selection variables may produce no output and a nonzero final status; that is not an inventory failure. If the container is stopped, report that state rather than changing it solely to run this block. The assistant will then supply the remaining targeted checks for the loaded driver, memory limits and exact configuration.
+**Next action — Aleš:** review the [final report](experiment-results.md) and PR #1, then decide whether to retain the opt-in lab image, extend validation or pursue an upstream proposal. Hardware evidence collection and rollback verification are complete. The original server is restored; no permanent deployment or merge is implied.
 
 ## References
 

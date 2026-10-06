@@ -22,6 +22,24 @@ def api(path, payload=None):
         return json.load(response)
 
 
+def capture_command(output, name, args, check=True):
+    """Keep original command bytes; decode only the returned display/JSON text."""
+    try:
+        result = subprocess.run(args, stdout=subprocess.PIPE, stderr=subprocess.STDOUT, timeout=120)
+        data = result.stdout
+        returncode = result.returncode
+    except subprocess.TimeoutExpired as exc:
+        data = (exc.stdout or b'') + b'\nCollector: command timed out.\n'
+        returncode = 124
+    except OSError as exc:
+        data = f'Collector: {type(exc).__name__}: {exc}\n'.encode('utf-8')
+        returncode = 125
+    (output / name).write_bytes(data)
+    if check and returncode:
+        raise RuntimeError(f'{name}: command failed with status {returncode}')
+    return data.decode('utf-8', errors='replace')
+
+
 def main():
     os.umask(0o077)
     repo = Path(__file__).resolve().parent.parent
@@ -30,11 +48,7 @@ def main():
     out.mkdir(parents=True, exist_ok=False)
 
     def capture(name, args, check=True):
-        result = subprocess.run(args, text=True, stdout=subprocess.PIPE, stderr=subprocess.STDOUT, timeout=120)
-        (out / name).write_text(result.stdout)
-        if check and result.returncode:
-            raise RuntimeError(f'{name}: command failed with status {result.returncode}')
-        return result.stdout
+        return capture_command(out, name, args, check)
 
     attempted = False
     try:

@@ -7,7 +7,7 @@ Updated: 6 October 2026, after review of the completed local build.
 | 1–2 — inventory and source binding | Complete. Baseline: context 32,768, 66/66 layers on GPU. |
 | 3 — opt-in implementation | Local helper tests pass; full patched ANV compilation succeeded on Aleš's host. |
 | 4–6 — build and evidence review | Complete. Missing XRandR build dependency fixed; source/patch identity, build options, ICD and runtime dependencies verified. |
-| 7 — switch-off smoke | Next action — Aleš. |
+| 7 — switch-off smoke | Inference and custom-driver binding verified; recovering runner logs after collector decoding failure. |
 | 8–13 — comparisons, analysis and decision | Pending smoke verification. |
 
 ## Reviewed build
@@ -35,3 +35,9 @@ Attach the printed smoke `.tar.gz` bundle. The script stops the small smoke mode
 ## Acceptance remains unchanged
 
 A–C each use one initial load plus three manual stop/reload cycles under a populated reuse pool. B/C use the same custom image with the switch off/on; CPU thread selection remains at its default and context is fixed at 32,768. D is a bounded memory holder with low CPU activity, sized after A–C. The initial baseline verifies source binding and full loading with ample headroom; it is not evidence that the reload problem is fixed.
+
+## Switch-off smoke evidence
+
+Bundle `20261006T202401Z-smoke-off.tgz` confirms the reviewed custom ANV hash in `llama-server` process maps. Vulkan enumeration selects Intel PTL, and diagnostics report `enabled=0 valid=1` with `selected=original`, despite a populated GPU reclaim pool. The small LFM model generated 32 tokens, all in its thinking field, then reached the output cap; this does not indicate a load or inference failure. API reports size equal to size_vram, context 4,096. The manual stop command exited successfully.
+
+The collector failed afterward while decoding non-UTF-8 bytes from `podman logs`, so runner logs and automatic packaging are missing. The uploaded bundle was recovered manually. The collector now retains command output as original bytes, decodes returned text with replacement, and handles command timeout/spawn failures without preventing final packaging during best-effort cleanup. A regression test covers invalid UTF-8 and timed-out log capture. Recover existing container logs before final smoke acceptance; no inference rerun or model change is required.

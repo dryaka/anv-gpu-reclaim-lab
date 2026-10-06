@@ -1,0 +1,16 @@
+# Raw machine evidence is private by default (this repository is public).
+evidence/
+results/raw/
+sources/
+build/
+downloads/
+*.tar
+*.tar.gz
+*.tar.xz
+*.deb
+*.rpm
+*.gguf
+*.log
+__pycache__/
+*.pyc
+.venv/

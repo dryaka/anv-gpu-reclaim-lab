@@ -1,0 +1,39 @@
+{
+  "source_package": "mesa",
+  "source_version": "25.2.8-0ubuntu0.24.04.2",
+  "upstream_version": "25.2.8",
+  "upstream_repository": "https://gitlab.freedesktop.org/mesa/mesa.git",
+  "upstream_tag": "mesa-25.2.8",
+  "upstream_commit": null,
+  "source_strategy": "Ubuntu source package with its complete quilt patch series; immutable archive hashes",
+  "base_url": "https://archive.ubuntu.com/ubuntu/pool/main/m/mesa/",
+  "files": [
+    {
+      "name": "mesa_25.2.8-0ubuntu0.24.04.2.dsc",
+      "sha256": "228955d9f3193af8ab0ea1065cd286569408fa5d5eecb4f5cb23a9e608c3cff1"
+    },
+    {
+      "name": "mesa_25.2.8.orig.tar.xz",
+      "sha256": "097842f3e49d996868b38688db87b006f7d4541e93ce86d2f341d8b3e7be7c93"
+    },
+    {
+      "name": "mesa_25.2.8-0ubuntu0.24.04.2.debian.tar.xz",
+      "sha256": "0a9571bb53628d9fb934e8f02bbbe7e7fb411fece5f46f3cc50a7aa7f2615e5b"
+    }
+  ],
+  "signature_verification": "not performed; HTTPS retrieval and pinned SHA-256 checks only",
+  "applied_distribution_patches": [
+    "path_max.diff",
+    "src_glx_dri_common.h.diff",
+    "disable_ppc64el_assembly.diff",
+    "0001-anv-Use-os_get_page_size-for-mmap-offset-alignment-t.patch",
+    "CVE-2026-40393-pre1.patch",
+    "CVE-2026-40393-1.patch",
+    "CVE-2026-40393-2.patch"
+  ],
+  "inspected_patched_files_sha256": {
+    "src/intel/vulkan/anv_physical_device.c": "6ad8d5175a362a90823dad7c78afc0941d94d53d709e8292d02fef5488e0e5c2",
+    "src/intel/dev/intel_device_info.c": "da3909e4c377045f084345263ca75886bc2005f9abc188c72b883af8807ade2c",
+    "src/intel/dev/xe/intel_device_info.c": "e1f750b843ebd547c6ce457b37db4dfc46136156bdecf04c89ece4653090e4f2"
+  }
+}

@@ -24,7 +24,7 @@ These are the intended commands for step 7, not part of the build. Use the exact
 ```bash
 # Set these to the existing model directory and the exact built image tag.
 MODEL_DIR="$HOME/.ollama/models"
-TEST_IMAGE=localhost/ollama-anv-test:REPLACE_WITH_PRINTED_COMMIT_TAG
+TEST_IMAGE=localhost/ollama-anv-test:b14f909fe917
 SELINUX_LEVEL="$(podman inspect --format '{{.ProcessLabel}}' ollama | cut -d: -f4-)"
 test -d "$MODEL_DIR"
 test -n "$SELINUX_LEVEL"
@@ -44,7 +44,7 @@ podman exec ollama-anv-test vulkaninfo --summary
 
 The current container already exposes card0/renderD128. The proposed device mapping must still be verified for the new container. Stop on a permission/label failure and return it; do not widen host permissions or use privileged mode. The new server is local-only at port 11435; the original container retains its configuration for rollback.
 
-The custom image selects its absolute ICD manifest through `VK_DRIVER_FILES`. `vulkaninfo` and loaded runner maps together with logs will establish selection; setting the variable alone is insufficient. Probe outside timed loads. A small smoke request can use the already installed `lfm2.5-thinking:1.2b`, then collect the inventory while its runner is loaded and stop it manually. Exact smoke/comparison commands will be finalized after build evidence review.
+The custom image selects its absolute ICD manifest through `VK_DRIVER_FILES`. `vulkaninfo` and loaded runner maps together with logs will establish selection; setting the variable alone is insufficient. Probe outside timed loads. A small smoke request can use the already installed `lfm2.5-thinking:1.2b`, then collect the inventory while its runner is loaded and stop it manually. Run `python3 scripts/smoke-test.py` after starting the container above. The collector verifies the reviewed image ID and switch-off configuration, checks device access and Vulkan enumeration, makes a small request at context 4,096 and a 32-token output cap, captures loaded process maps and hashes, then manually stops the smoke model. It saves a private `.tar.gz` bundle beside the repository even on a test failure; return that bundle here. No model is downloaded. This smoke workload is separate from the 32,768-context comparison workload. Leave the test container running after collection for review. Comparison commands follow after smoke verification.
 
 Case A uses the existing image. B/C use the custom image with switch 0/1 respectively. Recreating the test container to change the environment happens between cases, never between measured stop/reload cycles. No CPU-thread override is introduced. Context, prompt, output cap, keep-alive and other workload settings will be identical across A–C. Each case retains one initial load plus three measured manual stop/reload cycles; no manual reclaim between a measured stop and reload.
 

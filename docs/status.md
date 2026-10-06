@@ -1,33 +1,36 @@
 # Experiment status and next handoff
 
-Updated: 6 October 2026, after loaded-baseline verification and patch preparation.
+Updated: 6 October 2026, after review of the completed local build.
 
 | Plan step | State |
 | --- | --- |
-| 1 — environment inventory | Complete for this preparation. Defaults recorded; separate 12-thread CPU setting excluded. |
-| 2 — loaded driver, matched source and kernel/limits | Complete. Actual ANV hash matches the package/source; exact Fedora accounting and image config digest checked. Baseline uses context 32,768 with 66/66 offload. |
-| 3 — opt-in ANV implementation | Patch written and locally reviewed; parser/arithmetic tests and exact-source patch application pass. Full driver compilation is the next validation. |
-| 4 — build and evidence bundle | Containerfile, build collector, runtime design and rollback instructions ready. Exact smoke/cycle execution tooling will be finalized after build review, before hardware comparisons. |
-| 5 — local image build | Next action — Aleš. |
-| 6–13 — build review, smoke, comparisons, analysis and decision | Pending the build. |
+| 1–2 — inventory and source binding | Complete. Baseline: context 32,768, 66/66 layers on GPU. |
+| 3 — opt-in implementation | Local helper tests pass; full patched ANV compilation succeeded on Aleš's host. |
+| 4–6 — build and evidence review | Complete. Missing XRandR build dependency fixed; source/patch identity, build options, ICD and runtime dependencies verified. |
+| 7 — switch-off smoke | Next action — Aleš. |
+| 8–13 — comparisons, analysis and decision | Pending smoke verification. |
 
-## Aleš: build and return evidence
+## Reviewed build
 
-Stop the baseline model manually if it is still loaded, then build from the clean updated branch:
+Private bundle: `20261006T200701Z-build.tar.gz`.
+
+- Build commit: `b14f909fe917567629c5fc5a4176feb37e381d4f`.
+- Image tag: `localhost/ollama-anv-test:b14f909fe917`.
+- Image ID: `2687fe2ef85d0b19e60318e731e4af0309370cb8c81efd4233609eb72866bda6`.
+- ANV library SHA-256: `0efddde0239a00350d75491fc49e46e5a155e3f5ed5f18f0ebe48620542b0d37`.
+- Patch SHA-256: `d59b3f8d7608fec6a34cb3eca715b5c391e5c13c7bdc9e1321df8f90f114e157`.
+
+The release build selects only Intel Vulkan, with X11/Wayland and LLVM enabled. The ICD references `/opt/mesa-anv-test/lib/libvulkan_intel.so`; all recorded runtime dependencies resolve. Build success does not establish actual runner driver selection, GPU access, or reclaim behavior.
+
+## Aleš: switch-off smoke
+
+Pull the updated branch, then use the container-start commands in [build/runtime handoff](build-and-runtime.md). Run:
 
 ```bash
-ollama stop hf.co/bottlecapai/ThinkingCap-Qwen3.8-27B-GGUF:Q6_K
-git fetch origin
-git switch experiment/anv-gpu-reclaim
-git pull --ff-only
-bash scripts/build-image.sh
+python3 scripts/smoke-test.py
 ```
 
-This compiles the experimental image and collects source, patch, package, image and dependency evidence. It does not start the experimental service or replace the normal container. It uses four build jobs by default and includes LLVM 20 development dependencies. Let the host settle after compilation before memory measurements.
-
-Attach the printed build `.tar.gz` bundle here. If the build fails, attach its `build.log`. See [build/runtime handoff](build-and-runtime.md) for details. The assistant will review compiler/dependency evidence before the switch-off driver smoke check.
-
-The complete ANV driver has not been compiled in the assistant's environment, which lacks a container engine. The build recipe deliberately fails on unavailable pinned compatibility packages instead of silently changing the stack; return that error for diagnosis if encountered.
+Attach the printed smoke `.tar.gz` bundle. The script stops the small smoke model after collecting loaded-runner evidence. Keep the original container for rollback. The built image stays the same despite newer documentation/collector commits; no rebuild is required.
 
 ## Acceptance remains unchanged
 

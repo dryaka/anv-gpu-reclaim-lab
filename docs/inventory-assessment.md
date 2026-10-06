@@ -24,19 +24,19 @@ The 13 GiB charged to the otherwise idle container is predominantly file cache (
 
 Host counters show approximately 38.9 GiB `MemAvailable`, 1.21 GiB `GPUActive`, 0.84 GiB `GPUReclaim` and no used swap. Only the Ollama server process is present. This inventory does not establish the populated large reuse-pool condition needed for A–C. `GPUActive` can include desktop GPU use; it is not evidence that an Ollama model was loaded.
 
-## Remaining runtime checks
+## Device and parameter checks completed
 
 No running process maps showed ANV, as expected with no model loaded. Packaged library identity is established; actual runner library identity is still unconfirmed.
 
-The configuration collector reported `Devices=[]`, no device requests and only the model bind mount. This does not establish access to `/dev/dri` inside the container. Check the actual device nodes and process identity before reproducing device access in the test container. Do not widen permissions or disable SELinux merely to make the check pass.
+The configuration collector reported `Devices=[]`, no device requests and only the model bind mount. The subsequent check confirms `/dev/dri/card0` and `/dev/dri/renderD128` are present inside the running container. Its process identity is root with groups 0 and 65534. `card0` is mode 0660 with an ACL; `renderD128` is mode 0666. These are observations of the existing state, not instructions to change host permissions. The exact device mapping/creation command is still not recovered from the inspect summary.
 
-Run these read-only commands in the current state and return their output:
+The completed read-only checks were:
 
 ```bash
 podman exec ollama sh -c 'id; ls -ld /dev/dri; ls -l /dev/dri'
 podman exec ollama ollama show hf.co/bottlecapai/ThinkingCap-Qwen3.8-27B-GGUF:Q6_K --parameters
 ```
 
-Neither command loads a model. If the device directory is absent, report the output; do not recreate the working container yet. Model parameters are needed because using request defaults does not tell us whether the saved model already specifies context, batch or other options. The agreed comparison context remains 32,768 and will be made explicit consistently for A–C.
+Both container and host CLI parameter queries returned no output, so no saved parameter overrides are shown. The model reports qwen35, 27.3B parameters, Q6_K quantization and a 262,144 maximum context, plus a CLIP projector with 460.73M parameters. The maximum context is not proof of active runtime context. The agreed comparison context remains 32,768 and will be made explicit consistently for A–C.
 
-Loaded-library maps will be collected during a suitable existing or small-model baseline run after device access is resolved. No large-model load is required solely to answer these two checks.
+Device presence and saved-parameter checks are now complete. The next intentional baseline request will collect actual loaded-library maps and effective context; see `docs/status.md`. No permissions or container settings were changed by these checks.

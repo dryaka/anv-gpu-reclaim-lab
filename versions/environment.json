@@ -1,7 +1,7 @@
 {
   "schema_version": 1,
   "recorded_date": "2026-10-06",
-  "status": "inventory assessed; exact Fedora accounting checked; loaded driver and device exposure pending",
+  "status": "runtime devices and saved parameters checked; loaded-runner library pending",
   "host": {
     "kernel_release": "7.2.8-200.fc44.x86_64",
     "kernel_source_rpm": "kernel-7.2.8-200.fc44.src.rpm",
@@ -39,7 +39,7 @@
       "OLLAMA_IGPU_ENABLE": "1",
       "ANV_SYS_MEM_LIMIT": "90",
       "explicit_context_environment": null,
-      "gpu_device_mapping": "not established; inspect Devices is empty",
+      "gpu_device_mapping": "confirmed /dev/dri/card0 and /dev/dri/renderD128 visible inside current container; exact creation mapping not recovered from inspect",
       "privileged": false,
       "security_options": [],
       "model_mount_destination": "/root/.ollama/models"
@@ -57,6 +57,18 @@
       "amd64_manifest_digest": "sha256:4be1eaabf0dd0152bfbb780347e2888b5fe86ec25d0faa3eb4b1a956173736fb",
       "config_digest": "sha256:7fe01b0ef22e342fcbcb61e89d39de511609f078c30754a3a0bee7bb0f20a5c2",
       "matches_uploaded_image_id": true
+    },
+    "device_access_observed": {
+      "container_uid": 0,
+      "container_gid": 0,
+      "supplementary_groups": [
+        0,
+        65534
+      ],
+      "card0_mode": "0660 with ACL",
+      "renderD128_mode": "0666",
+      "device_node_owner": "nobody:nogroup",
+      "permission_changes_by_experiment": false
     }
   },
   "intended_workload": {
@@ -73,7 +85,17 @@
     "operator_memory_test_options": "defaults; no explicit request options reported",
     "cpu_test_threads_separate": 12,
     "cpu_test_threads_apply_to_this_comparison": false,
-    "model_saved_parameters": null
+    "model_saved_parameters": "ollama show --parameters returned no output both inside container and via host CLI",
+    "advertised_maximum_context": 262144,
+    "model_architecture": "qwen35",
+    "parameter_count_reported": "27.3B",
+    "quantization_reported": "Q6_K",
+    "projector": {
+      "architecture": "clip",
+      "parameter_count_reported": "460.73M",
+      "embedding_length": 1152,
+      "dimensions": 5120
+    }
   },
   "experimental_image": null,
   "patch": null,

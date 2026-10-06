@@ -1,5 +1,5 @@
 #!/usr/bin/env python3
-"""One initial load and three explicit stop/reloads; never shrink or restart a server."""
+"""A–C: initial load and three stop/reloads. E: one rollback request. No shrinking or server restarts."""
 import argparse
 from datetime import datetime, timezone
 import json
@@ -14,7 +14,8 @@ import urllib.request
 
 MODEL = 'hf.co/bottlecapai/ThinkingCap-Qwen3.8-27B-GGUF:Q6_K'
 MODEL_DIGEST = 'c44571a7ec4632c3d7494a7317a9c70949ce475d2acce2586046d585f244839f'
-IMAGES = {'A': '7fe01b0ef22e342fcbcb61e89d39de511609f078c30754a3a0bee7bb0f20a5c2',
+IMAGES = {'E': '7fe01b0ef22e342fcbcb61e89d39de511609f078c30754a3a0bee7bb0f20a5c2',
+          'A': '7fe01b0ef22e342fcbcb61e89d39de511609f078c30754a3a0bee7bb0f20a5c2',
           'B': '2687fe2ef85d0b19e60318e731e4af0309370cb8c81efd4233609eb72866bda6',
           'C': '2687fe2ef85d0b19e60318e731e4af0309370cb8c81efd4233609eb72866bda6'}
 
@@ -45,8 +46,8 @@ def command(args, timeout=60):
         return 125, b'', str(exc).encode()
 
 
-def run_cycles(runner):
-    for index in range(4):
+def run_cycles(runner, loads=4):
+    for index in range(loads):
         runner.generate(index)
         runner.stop(index)
 
@@ -54,9 +55,9 @@ def run_cycles(runner):
 class CaseRunner:
     def __init__(self, case, output):
         self.case, self.output = case, output
-        self.container = 'ollama' if case == 'A' else 'ollama-anv-test'
-        self.other = 'ollama-anv-test' if case == 'A' else 'ollama'
-        self.base = 'http://127.0.0.1:' + ('11434' if case == 'A' else '11435')
+        self.container = 'ollama' if case in ('A', 'E') else 'ollama-anv-test'
+        self.other = 'ollama-anv-test' if case in ('A', 'E') else 'ollama'
+        self.base = 'http://127.0.0.1:' + ('11434' if case in ('A', 'E') else '11435')
         self.root = Path(__file__).resolve().parent.parent
         self.opener = urllib.request.build_opener(urllib.request.ProxyHandler({}))
         self.report = {'case': case, 'started_utc': utc(), 'request': request_body(), 'events': [], 'runs': []}
@@ -108,7 +109,7 @@ class CaseRunner:
         env = dict(x.split('=', 1) for x in current['Config']['Env'] if '=' in x)
         if env.get('OLLAMA_IGPU_ENABLE') != '1' or env.get('ANV_SYS_MEM_LIMIT') != '90':
             raise RuntimeError('Expected OLLAMA_IGPU_ENABLE=1 and ANV_SYS_MEM_LIMIT=90')
-        if self.case != 'A':
+        if self.case not in ('A', 'E'):
             expected = '1' if self.case == 'C' else '0'
             if env.get('ANV_EXPERIMENTAL_GPU_RECLAIM') != expected or env.get('ANV_EXPERIMENTAL_GPU_RECLAIM_DEBUG') != '1':
                 raise RuntimeError('Unexpected experiment/diagnostic switch state')
@@ -185,7 +186,7 @@ class CaseRunner:
 
 def main():
     parser = argparse.ArgumentParser(description=__doc__)
-    parser.add_argument('--case', choices=('A', 'B', 'C'), required=True)
+    parser.add_argument('--case', choices=('A', 'B', 'C', 'E'), required=True)
     parser.add_argument('--note', default='', help='Operator notes; also report responsiveness after the run')
     args = parser.parse_args()
     os.umask(0o077)
@@ -208,7 +209,7 @@ def main():
         runner.preflight()
         print('Observe responsiveness; Ctrl+C stops this case and collects available evidence.', flush=True)
         thread.start()
-        run_cycles(runner)
+        run_cycles(runner, loads=1 if args.case == 'E' else 4)
         success = True
     except KeyboardInterrupt:
         runner.report['error'] = 'Operator interrupted'

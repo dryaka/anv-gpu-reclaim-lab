@@ -56,3 +56,15 @@ class ReloadCaseTests(unittest.TestCase):
                 runner.stop(0)
             sleeping.assert_called_once_with(1)
             self.assertFalse(runner.attempted)
+
+    def test_rollback_makes_only_one_request_and_unloads_it(self):
+        from unittest.mock import Mock
+        runner = Mock()
+        case.run_cycles(runner, loads=1)
+        runner.generate.assert_called_once_with(0)
+        runner.stop.assert_called_once_with(0)
+        with tempfile.TemporaryDirectory() as directory:
+            rollback = case.CaseRunner('E', Path(directory))
+            self.assertEqual(rollback.container, 'ollama')
+            self.assertEqual(rollback.base, 'http://127.0.0.1:11434')
+            self.assertEqual(case.IMAGES['E'], case.IMAGES['A'])

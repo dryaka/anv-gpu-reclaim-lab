@@ -1,6 +1,6 @@
 # Experiment status and next handoff
 
-Updated: 6 October 2026, after review of the completed local build.
+Updated: 6 October 2026, after Case A evidence review.
 
 | Plan step | State |
 | --- | --- |
@@ -8,7 +8,7 @@ Updated: 6 October 2026, after review of the completed local build.
 | 3 — opt-in implementation | Local helper tests pass; full patched ANV compilation succeeded on Aleš's host. |
 | 4–6 — build and evidence review | Complete. Missing XRandR build dependency fixed; source/patch identity, build options, ICD and runtime dependencies verified. |
 | 7–8 — switch-off smoke and review | Complete. Custom driver, switch-off calculation, 17/17 offload and successful generation confirmed. |
-| 9 — A/B/C comparisons | Collector ready; Case A is the next action. |
+| 9 — A/B/C comparisons | A reproduced partial offload on all four loads. B is the next action; C pending. |
 | 10–13 — analysis, pressure test, rollback and decision | Pending comparisons. |
 
 ## Reviewed build
@@ -23,9 +23,20 @@ Private bundle: `20261006T200701Z-build.tar.gz`.
 
 The release build selects only Intel Vulkan, with X11/Wayland and LLVM enabled. The ICD references `/opt/mesa-anv-test/lib/libvulkan_intel.so`; all recorded runtime dependencies resolve. Build success does not establish actual runner driver selection, GPU access, or reclaim behavior.
 
-## Aleš: Case A
+## Aleš: Case B
 
-Follow [comparison runs](comparison-runs.md): stop the test container, start the original container, ensure no model is already loaded, then run `python3 scripts/run-reload-case.py --case A`. Attach its evidence bundle and desktop responsiveness notes. The initial reclaim pool is recorded; do not manually shrink between loads. No image rebuild is required.
+[Case A assessment](case-A-assessment.md) records 37/66, 57/66, 38/66 and 56/66 GPU layers at fixed context 32,768. All requests and unload checks completed. Some swap activity occurred; no cgroup OOM or GPU reset was recorded. Operator responsiveness notes are still needed.
+
+Run the disabled custom image comparison:
+
+```bash
+git pull --ff-only
+podman stop ollama
+podman start ollama-anv-test
+python3 scripts/run-reload-case.py --case B
+```
+
+Attach the B bundle and desktop responsiveness observations for A/B. Keep the pool populated; do not shrink it, rebuild the image, reset swap or drop caches. See [comparison runs](comparison-runs.md).
 
 ## Acceptance remains unchanged
 

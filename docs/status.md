@@ -7,8 +7,9 @@ Updated: 6 October 2026, after review of the completed local build.
 | 1–2 — inventory and source binding | Complete. Baseline: context 32,768, 66/66 layers on GPU. |
 | 3 — opt-in implementation | Local helper tests pass; full patched ANV compilation succeeded on Aleš's host. |
 | 4–6 — build and evidence review | Complete. Missing XRandR build dependency fixed; source/patch identity, build options, ICD and runtime dependencies verified. |
-| 7 — switch-off smoke | Inference and custom-driver binding verified; recovering runner logs after collector decoding failure. |
-| 8–13 — comparisons, analysis and decision | Pending smoke verification. |
+| 7–8 — switch-off smoke and review | Complete. Custom driver, switch-off calculation, 17/17 offload and successful generation confirmed. |
+| 9 — A/B/C comparisons | Collector ready; Case A is the next action. |
+| 10–13 — analysis, pressure test, rollback and decision | Pending comparisons. |
 
 ## Reviewed build
 
@@ -22,15 +23,9 @@ Private bundle: `20261006T200701Z-build.tar.gz`.
 
 The release build selects only Intel Vulkan, with X11/Wayland and LLVM enabled. The ICD references `/opt/mesa-anv-test/lib/libvulkan_intel.so`; all recorded runtime dependencies resolve. Build success does not establish actual runner driver selection, GPU access, or reclaim behavior.
 
-## Aleš: switch-off smoke
+## Aleš: Case A
 
-Pull the updated branch, then use the container-start commands in [build/runtime handoff](build-and-runtime.md). Run:
-
-```bash
-python3 scripts/smoke-test.py
-```
-
-Attach the printed smoke `.tar.gz` bundle. The script stops the small smoke model after collecting loaded-runner evidence. Keep the original container for rollback. The built image stays the same despite newer documentation/collector commits; no rebuild is required.
+Follow [comparison runs](comparison-runs.md): stop the test container, start the original container, ensure no model is already loaded, then run `python3 scripts/run-reload-case.py --case A`. Attach its evidence bundle and desktop responsiveness notes. The initial reclaim pool is recorded; do not manually shrink between loads. No image rebuild is required.
 
 ## Acceptance remains unchanged
 
@@ -40,4 +35,4 @@ A–C each use one initial load plus three manual stop/reload cycles under a pop
 
 Bundle `20261006T202401Z-smoke-off.tgz` confirms the reviewed custom ANV hash in `llama-server` process maps. Vulkan enumeration selects Intel PTL, and diagnostics report `enabled=0 valid=1` with `selected=original`, despite a populated GPU reclaim pool. The small LFM model generated 32 tokens, all in its thinking field, then reached the output cap; this does not indicate a load or inference failure. API reports size equal to size_vram, context 4,096. The manual stop command exited successfully.
 
-The collector failed afterward while decoding non-UTF-8 bytes from `podman logs`, so runner logs and automatic packaging are missing. The uploaded bundle was recovered manually. The collector now retains command output as original bytes, decodes returned text with replacement, and handles command timeout/spawn failures without preventing final packaging during best-effort cleanup. A regression test covers invalid UTF-8 and timed-out log capture. Recover existing container logs before final smoke acceptance; no inference rerun or model change is required.
+The collector failed afterward while decoding non-UTF-8 bytes from `podman logs`, so runner logs and automatic packaging are missing. The uploaded bundle was recovered manually. The collector now retains command output as original bytes, decodes returned text with replacement, and handles command timeout/spawn failures without preventing final packaging during best-effort cleanup. A regression test covers invalid UTF-8 and timed-out log capture. The recovered `container.log` completes smoke review: runner selects Vulkan0 Intel PTL, offloads 17/17 layers, and reports a final budget of 16,257,122,304 bytes while ignoring the additional reclaim allowance with the switch off. It generated 32 tokens at 23.41 tokens/s with context 4,096; no allocation/inference failure is reported in that log. This is not a complete host kernel health check.

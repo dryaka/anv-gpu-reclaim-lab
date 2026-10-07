@@ -1,0 +1,203 @@
+diff --git a/src/intel/vulkan/anv_gpu_reclaim.h b/src/intel/vulkan/anv_gpu_reclaim.h
+new file mode 100644
+--- /dev/null
++++ b/src/intel/vulkan/anv_gpu_reclaim.h
+@@ -0,0 +1,81 @@
++/* SPDX-License-Identifier: MIT */
++#pragma once
++
++#include <ctype.h>
++#include <stdbool.h>
++#include <stdint.h>
++#include <string.h>
++
++/* Parse a kernel kB counter, rejecting signs, wrong units and overflow. */
++static inline bool
++anv_gpu_reclaim_counter(const char *p, const char *end, uint64_t *bytes)
++{
++   while (p < end && isspace((unsigned char)*p))
++      p++;
++   if (p == end || *p < '0' || *p > '9')
++      return false;
++   uint64_t value = 0;
++   while (p < end && *p >= '0' && *p <= '9') {
++      unsigned digit = *p++ - '0';
++      if (value > (UINT64_MAX - digit) / 10)
++         return false;
++      value = value * 10 + digit;
++   }
++   if (p == end || !isspace((unsigned char)*p))
++      return false;
++   while (p < end && isspace((unsigned char)*p))
++      p++;
++   if (end - p < 2 || p[0] != 'k' || p[1] != 'B')
++      return false;
++   p += 2;
++   while (p < end && isspace((unsigned char)*p))
++      p++;
++   if (p != end || value > UINT64_MAX / 1024)
++      return false;
++   *bytes = value * 1024;
++   return true;
++}
++
++/* Outputs are untouched on failure; missing GPUReclaim adds zero. */
++static inline bool
++anv_gpu_reclaim_parse(const char *text, uint64_t *available, uint64_t *reclaim)
++{
++   uint64_t a = 0, r = 0;
++   bool found_a = false, found_r = false;
++   for (const char *p = text; *p;) {
++      const char *end = strchr(p, '\n');
++      if (!end)
++         return false; /* Reject a truncated snapshot. */
++      if (end - p >= 13 && memcmp(p, "MemAvailable:", 13) == 0) {
++         if (found_a || !anv_gpu_reclaim_counter(p + 13, end, &a))
++            return false;
++         found_a = true;
++      } else if (end - p >= 11 && memcmp(p, "GPUReclaim:", 11) == 0) {
++         if (found_r || !anv_gpu_reclaim_counter(p + 11, end, &r))
++            return false;
++         found_r = true;
++      }
++      p = end + 1;
++   }
++   if (!found_a || a > UINT64_MAX - r)
++      return false;
++   *available = a;
++   *reclaim = r;
++   return true;
++}
++
++static inline bool
++anv_gpu_reclaim_limit(uint64_t available, uint64_t reclaim,
++                      uint64_t region_free, uint64_t region_size,
++                      uint64_t *result)
++{
++   if (available > UINT64_MAX - reclaim || region_free > region_size)
++      return false;
++   uint64_t value = available + reclaim;
++   if (value > region_free)
++      value = region_free;
++   if (value > region_size)
++      value = region_size;
++   *result = value;
++   return true;
++}
+diff --git a/src/intel/vulkan/anv_physical_device.c b/src/intel/vulkan/anv_physical_device.c
+--- a/src/intel/vulkan/anv_physical_device.c
++++ b/src/intel/vulkan/anv_physical_device.c
+@@ -5,6 +5,9 @@
+ #include "anv_private.h"
+ #include "anv_api_version.h"
+ #include "anv_measure.h"
++#include "anv_gpu_reclaim.h"
++#include "intel/dev/xe/intel_device_info.h"
++#include <inttypes.h>
+ 
+ #include "i915/anv_device.h"
+ #include "xe/anv_device.h"
+@@ -2072,6 +2075,54 @@
+       return kmd_reported_sram * 3 / 4;
+ }
+ 
++/* Experimental Linux/Xe integrated-GPU path. Shared Intel/util behavior is
++ * unchanged. Query a copy to recover the region bound BEFORE its host clamp.
++ */
++static void
++anv_apply_gpu_reclaim(struct anv_physical_device *device, int fd)
++{
++#ifdef __linux__
++   bool enabled = debug_get_bool_option("ANV_EXPERIMENTAL_GPU_RECLAIM", false);
++   bool diagnostic = debug_get_bool_option("ANV_EXPERIMENTAL_GPU_RECLAIM_DEBUG", false) &&
++                     !device->experimental_gpu_reclaim_budget_logged;
++   if (!enabled && !diagnostic)
++      return;
++   if (device->info.has_local_mem || device->info.kmd_type != INTEL_KMD_TYPE_XE)
++      return;
++
++   struct intel_device_info raw = device->info;
++   uint64_t available = 0, reclaim = 0, adjusted = device->sys.available;
++   bool valid = intel_device_info_xe_query_regions(fd, &raw, true);
++   char snapshot[16384];
++   int memfd = open("/proc/meminfo", O_RDONLY | O_CLOEXEC);
++   ssize_t count = memfd >= 0 ? read(memfd, snapshot, sizeof(snapshot) - 1) : -1;
++   if (memfd >= 0)
++      close(memfd);
++   if (count <= 0 || count == (ssize_t)(sizeof(snapshot) - 1)) {
++      valid = false;
++   } else {
++      snapshot[count] = 0;
++      valid = anv_gpu_reclaim_parse(snapshot, &available, &reclaim) && valid;
++   }
++   if (valid)
++      valid = anv_gpu_reclaim_limit(available, reclaim, raw.mem.sram.mappable.free,
++                                    raw.mem.sram.mappable.size, &adjusted);
++   uint64_t original = device->sys.available;
++   if (enabled && valid)
++      device->sys.available = adjusted;
++   if (diagnostic) {
++      fprintf(stderr, "ANV_GPU_RECLAIM enabled=%u valid=%u MemAvailable=%"PRIu64
++              " GPUReclaim=%"PRIu64" region_free=%"PRIu64" region_size=%"PRIu64
++              " original=%"PRIu64" selected=%"PRIu64" bytes\n",
++              enabled, valid, available, reclaim, raw.mem.sram.mappable.free,
++              raw.mem.sram.mappable.size, original, device->sys.available);
++   }
++#else
++   (void)device;
++   (void)fd;
++#endif
++}
++
+ static VkResult MUST_CHECK
+ anv_init_meminfo(struct anv_physical_device *device, int fd)
+ {
+@@ -2081,6 +2132,7 @@
+    device->sys.size =
+       anv_restrict_sys_heap_size(device, devinfo->mem.sram.mappable.size);
+    device->sys.available = devinfo->mem.sram.mappable.free;
++   anv_apply_gpu_reclaim(device, fd);
+ 
+    device->vram_mappable.region = &devinfo->mem.vram.mem;
+    device->vram_mappable.size = devinfo->mem.vram.mappable.size;
+@@ -2101,6 +2153,7 @@
+ 
+    const struct intel_device_info *devinfo = &device->info;
+    device->sys.available = devinfo->mem.sram.mappable.free;
++   anv_apply_gpu_reclaim(device, fd);
+    device->vram_mappable.available = devinfo->mem.vram.mappable.free;
+    device->vram_non_mappable.available = devinfo->mem.vram.unmappable.free;
+ }
+@@ -3060,7 +3113,19 @@
+ 
+       memoryBudget->heapUsage[i] = heap_used;
+       memoryBudget->heapBudget[i] = heap_budget;
+-   }
++      if (debug_get_bool_option("ANV_EXPERIMENTAL_GPU_RECLAIM_DEBUG", false) &&
++          !device->experimental_gpu_reclaim_budget_logged) {
++         fprintf(stderr, "ANV_GPU_RECLAIM heap=%zu local=%u heap_size=%"PRIu64
++                 " heaps_size=%"PRIu64" mem_available=%"PRIu64
++                 " reserve_percent=10 usage=%"PRIu64" final_budget=%"PRIu64
++                 " rounding=1048576 bytes\n", i, device->memory.heaps[i].is_local_mem,
++                 (uint64_t)heap_size, (uint64_t)total_heaps_size, mem_available,
++                 (uint64_t)heap_used, (uint64_t)heap_budget);
++      }
++   }
++
++   if (debug_get_bool_option("ANV_EXPERIMENTAL_GPU_RECLAIM_DEBUG", false))
++      device->experimental_gpu_reclaim_budget_logged = true;
+ 
+    /* The heapBudget and heapUsage values must be zero for array elements
+     * greater than or equal to VkPhysicalDeviceMemoryProperties::memoryHeapCount
+diff --git a/src/intel/vulkan/anv_private.h b/src/intel/vulkan/anv_private.h
+--- a/src/intel/vulkan/anv_private.h
++++ b/src/intel/vulkan/anv_private.h
+@@ -1069,6 +1069,8 @@
+ 
+ struct anv_physical_device {
+     struct vk_physical_device                   vk;
++    /* Emit opt-in reclaim/budget diagnostics only through the first budget query. */
++    bool experimental_gpu_reclaim_budget_logged;
+ 
+     /* Link in anv_instance::physical_devices */
+     struct list_head                            link;

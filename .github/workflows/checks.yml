@@ -1,0 +1,26 @@
+name: Preparation checks
+on:
+  pull_request:
+  push:
+    branches: [experiment/anv-gpu-reclaim]
+  workflow_dispatch:
+permissions:
+  contents: read
+jobs:
+  checks:
+    runs-on: ubuntu-24.04
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          fetch-depth: 2
+      - name: Inventory privacy and behavior checks
+        run: python3 -m unittest discover -s tests -v
+      - name: Python syntax and manifest parsing
+        run: |
+          python3 -m py_compile scripts/*.py
+          python3 -m json.tool versions/environment.json > /dev/null
+          python3 -m json.tool versions/mesa-source.json > /dev/null
+          python3 -m json.tool versions/fedora-kernel-source.json > /dev/null
+          bash -n scripts/build-image.sh
+      - name: Whitespace check
+        run: git diff --check HEAD^ HEAD

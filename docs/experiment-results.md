@@ -10,7 +10,13 @@ A verified 4 GiB resident, low-CPU background workload also completed its initia
 
 This is a successful **placement experiment with qualified host acceptance**, not a production-ready general fix. All cases recorded some global swap activity, and C recorded more swap-out than A/B. The evidence does not establish the absence of test-attributable sustained swapping because global counters do not fully attribute activity. Normal responsiveness and no observed OOM/reset are positive observations, but do not erase that limitation.
 
-Retain the patch and image as an opt-in lab result. Keep the switch default off, preserve the original image and workaround, and review swap behavior before enabling it routinely. Upstream submission, permanent deployment and a broader workload/kernel/GPU matrix are separate decisions. Repository review/merge preserves the experiment; it does not deploy the driver or make it default.
+### Owner decision — 7 October 2026
+
+Aleš considers the controlled experiment complete and will not pursue further swap-out investigation. Memory pressure during full model allocation could drive both TTM-pool reclaim and anonymous-page swap-out, but this is an unproven explanation. Some activity also occurred during inference. The recorded measurements and qualified host acceptance above remain unchanged; the cause is unresolved and is not a blocker for the chosen opt-in local trial.
+
+The next steps are to prepare a clean upstream change separately, retain a specific Ollama container build for approximately one month of use on this system, then decide whether to post the patch upstream. The observation period starts when regular use of that build begins; no upstream submission is authorized by this decision. Keep the daily-use image identifiable and fixed while preparing the upstream change. If preparation changes accounting behavior, validate that change before replacing the running build.
+
+The experimental switch remains default off. Preserve the original image and workaround. Repository review/merge preserves the experiment; it does not deploy the driver or make it a general default. A broader workload/kernel/GPU matrix and permanent deployment remain separate decisions.
 
 ## Tested stack and workload
 
@@ -74,7 +80,7 @@ The experiment covers one notebook, one kernel/runtime stack, one model/quantiza
 
 Source/base-image/Meson inputs are pinned, but all apt dependencies are not historically snapshot-locked. Build/source checksums do not substitute for source-package signature verification, which was not performed. Future rebuilds or versions need fresh driver/hash and behavior checks.
 
-Raw bundles contain machine/process details and remain outside Git; this report retains reviewed measurement summaries. Retain artifacts and experimental images until review and the choice to retain, extend or pursue upstream work are recorded.
+Raw bundles contain machine/process details and remain outside Git; this report retains reviewed measurement summaries. Retain artifacts and experimental images through the local observation period and the later upstream-submission decision.
 
 ## Supporting records
 
